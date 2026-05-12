@@ -4,9 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "app_modes.h"
 #include "config.h"
-#include "gait.h"
-#include "interpolation.h"
+#include "gamepad.h"
 #include "servo_driver.h"
 #include "state.h"
 
@@ -26,6 +26,7 @@ void printHelp() {
     Serial.println(F("  TRIM   ch offset_us      adjust trim and save to NVS"));
     Serial.println(F("  STOP                     zero all outputs immediately"));
     Serial.println(F("  STATUS                   print joint angles, pose, loop timing"));
+    Serial.println(F("  GAMEPADDUMP 0|1          raw pad axes (Bluepad32 builds only)"));
     Serial.println(F("  HELP                     print this message"));
 }
 
@@ -59,16 +60,6 @@ bool parseInt(char* tok, long& out) {
     return true;
 }
 
-// Switch to a mode and reset whatever helpers it needs.
-void enterMode(RunMode m) {
-    g_state.mode = m;
-    g_interpFlag = 0;
-    g_previousInterpMillis = millis();
-    if (m == MODE_WALK) {
-        gait::reset();
-    }
-}
-
 void handleWalk(char* rest) {
     float x, y, yaw;
     char* t1 = nextToken(&rest);
@@ -81,7 +72,7 @@ void handleWalk(char* rest) {
     g_state.walkX   = x;
     g_state.walkY   = y;
     g_state.walkYaw = yaw;
-    if (g_state.mode != MODE_WALK) enterMode(MODE_WALK);
+    if (g_state.mode != MODE_WALK) appEnterMode(MODE_WALK);
     Serial.printf("OK WALK %.2f %.2f %.2f\n", x, y, yaw);
 }
 
@@ -100,7 +91,7 @@ void handlePose(char* rest) {
     g_state.posePitch  = p;
     g_state.poseYaw    = y;
     g_state.poseHeight = h;
-    if (g_state.mode != MODE_POSE) enterMode(MODE_POSE);
+    if (g_state.mode != MODE_POSE) appEnterMode(MODE_POSE);
     Serial.printf("OK POSE %.2f %.2f %.2f %.2f\n", r, p, y, h);
 }
 
@@ -135,7 +126,7 @@ void handleServo(char* rest) {
         Serial.println(F("ERR ch must be 0..15"));
         return;
     }
-    if (g_state.mode != MODE_SERVO) enterMode(MODE_SERVO);
+    if (g_state.mode != MODE_SERVO) appEnterMode(MODE_SERVO);
     servoDriver::driveServo((uint8_t)ch, angle);
     Serial.printf("OK SERVO %ld %.2f\n", ch, angle);
 }
@@ -166,10 +157,23 @@ void handleStop() {
     Serial.println(F("OK STOP"));
 }
 
+void handleGamepadDump(char* rest) {
+    long v;
+    char* t1 = nextToken(&rest);
+    if (!parseInt(t1, v) || (v != 0 && v != 1)) {
+        Serial.println(F("ERR usage: GAMEPADDUMP 0|1"));
+        return;
+    }
+    gamepadSetDump(v != 0);
+    Serial.printf("OK GAMEPADDUMP %ld\n", v);
+}
+
 void handleStatus() {
     Serial.println(F("--- STATUS ---"));
-    Serial.printf("mode=%u  loop_us=%lu  loop_us_max=%lu\n",
+    Serial.printf("mode=%u  gamepad=%d  dump=%d  loop_us=%lu  loop_us_max=%lu\n",
                   (unsigned)g_state.mode,
+                  gamepadIsConnected() ? 1 : 0,
+                  gamepadIsDumping() ? 1 : 0,
                   (unsigned long)g_state.loopMicrosLast,
                   (unsigned long)g_state.loopMicrosMax);
     Serial.printf("pose roll=%.2f pitch=%.2f yaw=%.2f height=%.1f\n",
@@ -211,6 +215,7 @@ void dispatch(char* line) {
     else if (!strcmp(cmd, "TRIM"))   handleTrim(line);
     else if (!strcmp(cmd, "STOP"))   handleStop();
     else if (!strcmp(cmd, "STATUS")) handleStatus();
+    else if (!strcmp(cmd, "GAMEPADDUMP")) handleGamepadDump(line);
     else if (!strcmp(cmd, "HELP") || !strcmp(cmd, "?")) printHelp();
     else {
         Serial.print(F("ERR unknown command: "));

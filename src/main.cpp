@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "config.h"
+#include "gamepad.h"
 #include "gait.h"
 #include "interpolation.h"
 #include "kinematics.h"
@@ -40,6 +41,7 @@ void setup() {
     servoDriver::stopAll();
 
     serialCmd::begin();
+    gamepadBegin();
 
     g_previousInterpMillis = millis();
     g_state.mode = MODE_IDLE;
@@ -51,6 +53,9 @@ void setup() {
 // LOOP
 // ============================================================
 void loop() {
+    // Bluepad32 must be serviced every loop iteration (Bluetooth stack).
+    gamepadPoll();
+
     // Serial parsing runs every iteration so commands respond fast even
     // when the 100 Hz control tick isn't due.
     serialCmd::poll();

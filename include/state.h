@@ -38,6 +38,9 @@ struct RobotState {
     // --- timing diagnostics ---
     uint32_t loopMicrosLast = 0;
     uint32_t loopMicrosMax  = 0;
+
+    // --- Bluetooth gamepad (Bluepad32 build only) ---
+    bool gamepadConnected = false;
 };
 
 // Single global state instance
