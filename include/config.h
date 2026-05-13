@@ -31,13 +31,14 @@
 //   front-right (FR)   front-left (FL)
 //   back-right  (BR)   back-left  (BL)
 //
-// PCA9685 channels:
-//   0..3   hip servos       (FR, FL, BR, BL)
-//   4..7   thigh servos     (FR, FL, BR, BL)
-//   8..11  shin/knee servos (FR, FL, BR, BL)
-//   12..15 wheel ESCs       (FR, FL, BR, BL)
+// PCA9685 channels — one contiguous block per leg (hip, thigh, shin, wheel):
+//   FR: 0 hip, 1 thigh, 2 shin, 3 wheel ESC
+//   FL: 4 hip, 5 thigh, 6 shin, 7 wheel ESC
+//   BR: 8 hip, 9 thigh, 10 shin, 11 wheel ESC
+//   BL: 12 hip, 13 thigh, 14 shin, 15 wheel ESC
 
 #define NUM_SERVO_CHANNELS 16
+#define CHANNELS_PER_LEG 4u
 
 // Leg indices used by the kinematics function (kept compatible with the
 // original openDog code): 1 = FR, 2 = FL, 3 = BL, 4 = BR.
@@ -65,10 +66,18 @@ constexpr uint8_t legToSlot(uint8_t leg) {
          :                   SLOT_FR;
 }
 
-constexpr uint8_t hipChannel  (uint8_t leg) { return  0 + legToSlot(leg); }
-constexpr uint8_t thighChannel(uint8_t leg) { return  4 + legToSlot(leg); }
-constexpr uint8_t shinChannel (uint8_t leg) { return  8 + legToSlot(leg); }
-constexpr uint8_t wheelChannel(uint8_t leg) { return 12 + legToSlot(leg); }
+constexpr uint8_t legBlockBase(uint8_t leg) {
+    return (uint8_t)(CHANNELS_PER_LEG * legToSlot(leg));
+}
+constexpr uint8_t hipChannel(uint8_t leg) { return (uint8_t)(legBlockBase(leg) + 0u); }
+constexpr uint8_t thighChannel(uint8_t leg) { return (uint8_t)(legBlockBase(leg) + 1u); }
+constexpr uint8_t shinChannel(uint8_t leg) { return (uint8_t)(legBlockBase(leg) + 2u); }
+constexpr uint8_t wheelChannel(uint8_t leg) { return (uint8_t)(legBlockBase(leg) + 3u); }
+
+// Wheel ESCs live on the 4th channel of each leg block (3, 7, 11, 15).
+constexpr bool isWheelPwmChannel(uint8_t ch) {
+    return ch < NUM_SERVO_CHANNELS && ((ch % CHANNELS_PER_LEG) == 3u);
+}
 
 // ============================================================
 // SERVO / ESC PULSE LIMITS

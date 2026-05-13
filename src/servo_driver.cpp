@@ -30,9 +30,6 @@ void defaultCal(ServoCal& c, bool isWheel) {
     }
 }
 
-inline bool isWheelChannel(uint8_t ch) {
-    return ch >= 12 && ch <= 15;
-}
 
 void loadFromNvs() {
     prefs.begin(NVS_NAMESPACE, /*readOnly=*/true);
@@ -43,7 +40,7 @@ void loadFromNvs() {
         DBG_PRINTLN(F("[servo] calibration loaded from NVS"));
     } else {
         for (uint8_t i = 0; i < NUM_SERVO_CHANNELS; ++i) {
-            defaultCal(cal[i], isWheelChannel(i));
+            defaultCal(cal[i], isWheelPwmChannel(i));
         }
         DBG_PRINTLN(F("[servo] using default calibration"));
     }
@@ -113,7 +110,7 @@ void driveWheel(uint8_t channel, float speed) {
 
 void stopAll() {
     for (uint8_t ch = 0; ch < NUM_SERVO_CHANNELS; ++ch) {
-        if (isWheelChannel(ch)) {
+        if (isWheelPwmChannel(ch)) {
             driveWheel(ch, 0.0f);
         } else {
             const ServoCal& c = cal[ch];
@@ -149,7 +146,7 @@ void saveCalibration() {
 
 void resetCalibration(bool persist) {
     for (uint8_t i = 0; i < NUM_SERVO_CHANNELS; ++i) {
-        defaultCal(cal[i], isWheelChannel(i));
+        defaultCal(cal[i], isWheelPwmChannel(i));
     }
     if (persist) writeToNvs();
 }

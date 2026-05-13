@@ -29,8 +29,8 @@ struct RobotState {
     // --- wheel speeds (WHEEL command), -100..+100 ---
     float wheel[4] = {0, 0, 0, 0};   // indexed by LegSlot (FR, FL, BR, BL)
 
-    // --- output enables (bits 0..3 = FR, FL, BR, BL). Used by calibration
-    // firmware and optional bench tests; normal firmware leaves these at 0x0F.
+    // --- output enables (bits 0..3 = FR, FL, BR, BL). Default 0x0F = all on;
+    // clear a bit to hold that leg's servos at a safe angle (see kinematics).
     uint8_t legOutputMask   = 0x0Fu;   // IK / leg servos
     uint8_t wheelOutputMask = 0x0Fu;   // wheel ESC channels
 
