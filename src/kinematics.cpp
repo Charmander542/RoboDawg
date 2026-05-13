@@ -78,6 +78,18 @@ void kinematics(int leg, float xIn, float yIn, float zIn,
                 float roll, float pitch, float yawIn,
                 int interOn, int dur) {
 
+    const uint8_t slotEarly = legToSlot((uint8_t)leg);
+    if ((g_state.legOutputMask & (1u << slotEarly)) == 0) {
+        const LegServoMap& m0 = g_legMap[leg];
+        servoDriver::driveServo(m0.hipCh,   90.0f);
+        servoDriver::driveServo(m0.thighCh, 90.0f);
+        servoDriver::driveServo(m0.shinCh,  90.0f);
+        g_state.jointHip[slotEarly]   = 0.0f;
+        g_state.jointThigh[slotEarly] = 0.0f;
+        g_state.jointShin[slotEarly]  = 0.0f;
+        return;
+    }
+
     // ------------------------------------------------------------
     // ROBOT PARAMETERS
     // ------------------------------------------------------------

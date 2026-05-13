@@ -89,10 +89,15 @@ void loop() {
     // ---- wheels always update from g_state.wheel[] ----
     // Setting any wheel via WHEEL command remains active until overwritten
     // or STOP is issued.
-    servoDriver::driveWheel(wheelChannel(LEG_FR), g_state.wheel[SLOT_FR]);
-    servoDriver::driveWheel(wheelChannel(LEG_FL), g_state.wheel[SLOT_FL]);
-    servoDriver::driveWheel(wheelChannel(LEG_BR), g_state.wheel[SLOT_BR]);
-    servoDriver::driveWheel(wheelChannel(LEG_BL), g_state.wheel[SLOT_BL]);
+    auto wheelSpeed = [](uint8_t slot) {
+        float s = g_state.wheel[slot];
+        if ((g_state.wheelOutputMask & (1u << slot)) == 0) s = 0.0f;
+        return s;
+    };
+    servoDriver::driveWheel(wheelChannel(LEG_FR), wheelSpeed(SLOT_FR));
+    servoDriver::driveWheel(wheelChannel(LEG_FL), wheelSpeed(SLOT_FL));
+    servoDriver::driveWheel(wheelChannel(LEG_BR), wheelSpeed(SLOT_BR));
+    servoDriver::driveWheel(wheelChannel(LEG_BL), wheelSpeed(SLOT_BL));
 
     // ---- loop timing diagnostics ----
     uint32_t dt = micros() - tStart;
