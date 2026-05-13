@@ -18,9 +18,8 @@
 // Physical servo command is:
 //   servoDeg = neutralDeg + direction * jointAngleDeg
 //
-// The default neutrals are 90 (mid-travel of a 0..180 hobby servo) and
-// directions are all +1. Sign flips and trim should be applied via the
-// per-channel calibration table in NVS once the robot is on the bench.
+// Neutrals are SERVO_NEUTRAL_DEG (mid of 0..270° leg servos). Sign flips
+// and trim are applied via the per-channel calibration table in NVS.
 
 LegServoMap g_legMap[5] = {
     // index 0: unused
@@ -31,7 +30,7 @@ LegServoMap g_legMap[5] = {
        /*thighCh*/ thighChannel(LEG_FR),
        /*shinCh*/  shinChannel (LEG_FR),
        /*wheelCh*/ wheelChannel(LEG_FR),
-       /*neutrals*/ 90.0f, 90.0f, 90.0f,
+       /*neutrals*/ SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG,
        /*dirs    */ +1.0f, +1.0f, +1.0f,
        /*shoulderCombineSign*/ +1.0f },
 
@@ -40,7 +39,7 @@ LegServoMap g_legMap[5] = {
        thighChannel(LEG_FL),
        shinChannel (LEG_FL),
        wheelChannel(LEG_FL),
-       90.0f, 90.0f, 90.0f,
+       SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG,
        -1.0f, -1.0f, +1.0f,    // mirror hip/thigh on the left side
        +1.0f },
 
@@ -49,7 +48,7 @@ LegServoMap g_legMap[5] = {
        thighChannel(LEG_BL),
        shinChannel (LEG_BL),
        wheelChannel(LEG_BL),
-       90.0f, 90.0f, 90.0f,
+       SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG,
        -1.0f, -1.0f, +1.0f,
        -1.0f },                 // rear legs combine with -
 
@@ -58,7 +57,7 @@ LegServoMap g_legMap[5] = {
        thighChannel(LEG_BR),
        shinChannel (LEG_BR),
        wheelChannel(LEG_BR),
-       90.0f, 90.0f, 90.0f,
+       SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG,
        +1.0f, +1.0f, +1.0f,
        -1.0f },
 };
@@ -81,9 +80,9 @@ void kinematics(int leg, float xIn, float yIn, float zIn,
     const uint8_t slotEarly = legToSlot((uint8_t)leg);
     if ((g_state.legOutputMask & (1u << slotEarly)) == 0) {
         const LegServoMap& m0 = g_legMap[leg];
-        servoDriver::driveServo(m0.hipCh,   90.0f);
-        servoDriver::driveServo(m0.thighCh, 90.0f);
-        servoDriver::driveServo(m0.shinCh,  90.0f);
+        servoDriver::driveServo(m0.hipCh,   SERVO_NEUTRAL_DEG);
+        servoDriver::driveServo(m0.thighCh, SERVO_NEUTRAL_DEG);
+        servoDriver::driveServo(m0.shinCh,  SERVO_NEUTRAL_DEG);
         g_state.jointHip[slotEarly]   = 0.0f;
         g_state.jointThigh[slotEarly] = 0.0f;
         g_state.jointShin[slotEarly]  = 0.0f;

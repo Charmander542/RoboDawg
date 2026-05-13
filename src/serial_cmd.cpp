@@ -23,7 +23,8 @@ void printHelp() {
     Serial.println(F("  POSE   roll pitch yaw h  set body pose directly"));
     Serial.println(F("  WHEEL  fl fr bl br       set wheel speeds -100..+100"));
     Serial.println(F("  SERVO  ch angle          drive one channel for calibration"));
-    Serial.println(F("  SERVOS90                 hip/thigh/shin at 90°, wheel ESCs neutral"));
+    Serial.println(F("  SERVOSMID                hip/thigh/shin at neutral (mid 270°), wheels off"));
+    Serial.println(F("  SERVOS90                 same as SERVOSMID (alias)"));
     Serial.println(F("  TRIM   ch offset_us      adjust trim and save to NVS"));
     Serial.println(F("  STOP                     zero all outputs immediately"));
     Serial.println(F("  STATUS                   print joint angles, pose, loop timing"));
@@ -114,7 +115,7 @@ void handleWheel(char* rest) {
     Serial.printf("OK WHEEL fl=%.1f fr=%.1f bl=%.1f br=%.1f\n", fl, fr, bl, br);
 }
 
-void handleServos90() {
+void handleServosMid() {
     g_state.walkX = g_state.walkY = g_state.walkYaw = 0.0f;
     for (int i = 0; i < 4; ++i) g_state.wheel[i] = 0.0f;
     appEnterMode(MODE_SERVO);
@@ -122,10 +123,10 @@ void handleServos90() {
         if (isWheelPwmChannel(ch)) {
             servoDriver::driveWheel(ch, 0.0f);
         } else {
-            servoDriver::driveServo(ch, 90.0f);
+            servoDriver::driveServo(ch, SERVO_NEUTRAL_DEG);
         }
     }
-    Serial.println(F("OK SERVOS90"));
+    Serial.println(F("OK SERVOSMID"));
 }
 
 void handleServo(char* rest) {
@@ -227,7 +228,8 @@ void dispatch(char* line) {
     else if (!strcmp(cmd, "POSE"))   handlePose(line);
     else if (!strcmp(cmd, "WHEEL"))  handleWheel(line);
     else if (!strcmp(cmd, "SERVO"))  handleServo(line);
-    else if (!strcmp(cmd, "SERVOS90")) handleServos90();
+    else if (!strcmp(cmd, "SERVOSMID")) handleServosMid();
+    else if (!strcmp(cmd, "SERVOS90")) handleServosMid();
     else if (!strcmp(cmd, "TRIM"))   handleTrim(line);
     else if (!strcmp(cmd, "STOP"))   handleStop();
     else if (!strcmp(cmd, "STATUS")) handleStatus();

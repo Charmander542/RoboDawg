@@ -84,10 +84,14 @@ constexpr bool isWheelPwmChannel(uint8_t ch) {
 // ============================================================
 // Default servo pulse range. Override per channel in the calibration
 // table loaded from NVS.
+// Leg servos are modelled as 270° travel over this PWM span (many 270°
+// digital servos still use ~500–2500 µs end-to-end; trim in NVS if not).
 #define SERVO_DEFAULT_MIN_US    500
 #define SERVO_DEFAULT_MAX_US   2500
 #define SERVO_DEFAULT_MIN_DEG    0.0f
-#define SERVO_DEFAULT_MAX_DEG  180.0f
+#define SERVO_DEFAULT_MAX_DEG  270.0f
+// Commanded angle at IK joint zero / bench “neutral” (mid of min..max).
+#define SERVO_NEUTRAL_DEG  ((SERVO_DEFAULT_MIN_DEG + SERVO_DEFAULT_MAX_DEG) * 0.5f)
 
 // ESC channel range (standard hobby ESC).
 #define ESC_MIN_US             1000
@@ -112,8 +116,8 @@ struct LegServoMap {
     uint8_t shinCh;
     uint8_t wheelCh;
 
-    // Neutral servo angles (degrees, 0..180) corresponding to zero
-    // joint angle. Most setups use 90 (mid-travel).
+    // Neutral servo angles (degrees, mid of 0..270 leg servos) for IK
+    // joint angle zero. Use SERVO_NEUTRAL_DEG (typically 135°).
     float   hipNeutral;
     float   thighNeutral;
     float   shinNeutral;

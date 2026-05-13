@@ -8,7 +8,8 @@ namespace gait {
 void reset();
 
 // Tick the gait state machine. Reads g_state.walkX / walkY / walkYaw and
-// drives the four legs via the kinematics() function. Non-blocking.
+// drives the four legs via kinematics() using a continuous diagonal-trot
+// phase clock (smooth stance/swing), not discrete leg-length hopping.
 void tick();
 
 // Hold a static pose. Reads g_state.poseRoll/Pitch/Yaw/Height and drives
