@@ -5,9 +5,14 @@
 #include "state.h"
 
 // ============================================================
-// PER-LEG SERVO MAPPING
+// PER-LEG SERVO MAPPING (IK / POSE)
 // ============================================================
 // Index by openDog leg id (1..4). Slot 0 is unused.
+//
+// **Leg 1 = FR (front right)** is the reference for thighDir / shinDir.
+// **Hip:** FR and BL use the same hipDir (+1); FL and BR use the opposite
+// (−1), matching the gait `kLegs[]` hipMul pairing. Thigh/shin still
+// follow left‑ vs right‑leg / front‑ vs rear‑leg IK conventions below.
 //
 // For each leg, the IK function emits three joint angles (degrees):
 //   hipAngle1Degrees   : hip abduction
@@ -43,22 +48,22 @@ LegServoMap g_legMap[5] = {
        -1.0f, -1.0f, +1.0f,    // mirror hip/thigh on the left side
        +1.0f },
 
-    // leg 3 : back left (slot BL)
+    // leg 3 : back left (slot BL) — hip same sign as FR; thigh like FL
     {  hipChannel  (LEG_BL),
        thighChannel(LEG_BL),
        shinChannel (LEG_BL),
        wheelChannel(LEG_BL),
        SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG,
-       -1.0f, -1.0f, +1.0f,
+       +1.0f, -1.0f, +1.0f,
        -1.0f },                 // rear legs combine with -
 
-    // leg 4 : back right (slot BR)
+    // leg 4 : back right (slot BR) — hip same sign as FL; thigh like FR
     {  hipChannel  (LEG_BR),
        thighChannel(LEG_BR),
        shinChannel (LEG_BR),
        wheelChannel(LEG_BR),
        SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG, SERVO_NEUTRAL_DEG,
-       +1.0f, +1.0f, +1.0f,
+       -1.0f, +1.0f, +1.0f,
        -1.0f },
 };
 

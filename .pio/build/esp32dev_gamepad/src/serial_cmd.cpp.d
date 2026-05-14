@@ -134,5 +134,5 @@
  C:/.platformio/packages/framework-arduinoespressif32@src-ce13039c475d8bf35778ad03de85d7b9/tools/sdk/esp32/include/esp_hw_support/include/soc/esp32/spiram.h \
  C:/.platformio/packages/framework-arduinoespressif32@src-ce13039c475d8bf35778ad03de85d7b9/cores/esp32/io_pin_remap.h \
  C:/.platformio/packages/framework-arduinoespressif32@src-ce13039c475d8bf35778ad03de85d7b9/cores/esp32/Arduino.h \
- include/app_modes.h include/state.h include/config.h include/gamepad.h \
- include/servo_driver.h
+ include/app_modes.h include/state.h include/config.h include/gait.h \
+ include/gamepad.h include/servo_driver.h

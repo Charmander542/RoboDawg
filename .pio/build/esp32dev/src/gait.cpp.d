@@ -133,5 +133,5 @@
  C:/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/soc/esp32/spiram.h \
  C:/.platformio/packages/framework-arduinoespressif32/cores/esp32/io_pin_remap.h \
  C:/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
- include/config.h include/interpolation.h include/kinematics.h \
+ include/config.h include/interpolation.h include/servo_driver.h \
  include/state.h

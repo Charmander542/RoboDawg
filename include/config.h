@@ -90,8 +90,63 @@ constexpr bool isWheelPwmChannel(uint8_t ch) {
 #define SERVO_DEFAULT_MAX_US   2500
 #define SERVO_DEFAULT_MIN_DEG    0.0f
 #define SERVO_DEFAULT_MAX_DEG  270.0f
-// Commanded angle at IK joint zero / bench “neutral” (mid of min..max).
+// Commanded angle at bench “neutral” (mid of min..max).
 #define SERVO_NEUTRAL_DEG  ((SERVO_DEFAULT_MIN_DEG + SERVO_DEFAULT_MAX_DEG) * 0.5f)
+
+// ============================================================
+// PER-JOINT HARDWARE LIMITS (servo deg, 0..270 frame)
+// ============================================================
+// Hip (leg 1 = FR reference): same **numeric** band every leg; direction
+// differences are only in software (`gait.cpp` `kLegs`, IK `g_legMap`).
+#define HIP_NEUTRAL_DEG   SERVO_NEUTRAL_DEG
+#define HIP_OUT_DEG       20.0f   // +Δ from neutral (abduction “out”)
+#define HIP_IN_DEG        15.0f   // −Δ from neutral (“in”)
+#define HIP_SAFE_MIN_DEG  (HIP_NEUTRAL_DEG - HIP_IN_DEG)
+#define HIP_SAFE_MAX_DEG  (HIP_NEUTRAL_DEG + HIP_OUT_DEG)
+
+// Femur — **right legs** (FR, BR): measured on leg 1 (FR), 150°..200°.
+// **Left legs** (FL, BL): mirrored mount → same *logical* motion uses the
+// opposite direction along the band: **70°..115°** (see
+// `femurRightFrameToServoForSlot()` in config.h). Tibia stays one band on all four legs.
+#define FEMUR_SAFE_MIN_DEG_R  150.0f
+#define FEMUR_SAFE_MAX_DEG_R  200.0f
+#define FEMUR_SAFE_MIN_DEG_L   70.0f
+#define FEMUR_SAFE_MAX_DEG_L  115.0f
+
+// Gait / POSE logic that still thinks in “right femur” numbers uses R band.
+#define FEMUR_SAFE_MIN_DEG  FEMUR_SAFE_MIN_DEG_R
+#define FEMUR_SAFE_MAX_DEG  FEMUR_SAFE_MAX_DEG_R
+
+// Tibia (all four legs): 100°..200° (same numbers; mirror only via `kLegs`
+// tibiaMul if needed on the bench).
+#define TIBIA_SAFE_MIN_DEG  100.0f
+#define TIBIA_SAFE_MAX_DEG  200.0f
+
+// Named body-height poses — **(femur, tibia) in right-leg (FR) numbers**;
+// left femur is derived by mapping 150..200 → 115..70.
+#define FEMUR_LOW_DEG    150.0f
+#define TIBIA_LOW_DEG    200.0f
+#define FEMUR_HIGH_DEG   160.0f
+#define TIBIA_HIGH_DEG   100.0f
+#define FEMUR_STAND_DEG  155.0f
+#define TIBIA_STAND_DEG  150.0f
+
+// Map a femur angle in **FR/BR (right) numbers** to the servo command for
+// `slot` (FL/BL use the mirrored 70°..115° band, opposite traverse vs right).
+inline bool legSlotIsLeftFemurMirror(uint8_t slot) {
+    return slot == SLOT_FL || slot == SLOT_BL;
+}
+
+inline float femurRightFrameToServoForSlot(uint8_t slot, float femurDegRight) {
+    femurDegRight = constrain(femurDegRight, FEMUR_SAFE_MIN_DEG_R, FEMUR_SAFE_MAX_DEG_R);
+    if (!legSlotIsLeftFemurMirror(slot)) {
+        return femurDegRight;
+    }
+    const float spanR = FEMUR_SAFE_MAX_DEG_R - FEMUR_SAFE_MIN_DEG_R;
+    const float spanL = FEMUR_SAFE_MAX_DEG_L - FEMUR_SAFE_MIN_DEG_L;
+    const float t     = (femurDegRight - FEMUR_SAFE_MIN_DEG_R) / spanR;
+    return FEMUR_SAFE_MAX_DEG_L - t * spanL;
+}
 
 // ESC channel range (standard hobby ESC).
 #define ESC_MIN_US             1000

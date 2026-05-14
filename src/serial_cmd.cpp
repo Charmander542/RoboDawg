@@ -6,6 +6,7 @@
 
 #include "app_modes.h"
 #include "config.h"
+#include "gait.h"
 #include "gamepad.h"
 #include "servo_driver.h"
 #include "state.h"
@@ -25,8 +26,12 @@ void printHelp() {
     Serial.println(F("  SERVO  ch angle          drive one channel for calibration"));
     Serial.println(F("  SERVOSMID                hip/thigh/shin at neutral (mid 270°), wheels off"));
     Serial.println(F("  SERVOS90                 same as SERVOSMID (alias)"));
+    Serial.println(F("  LOW                      femur 150° / tibia 200° on every leg (lowest body)"));
+    Serial.println(F("  HIGH                     femur 160° / tibia 100° on every leg (highest body)"));
+    Serial.println(F("  STAND                    femur 155° / tibia 150° on every leg (walk baseline)"));
     Serial.println(F("  TRIM   ch offset_us      adjust trim and save to NVS"));
-    Serial.println(F("  STOP                     zero all outputs immediately"));
+    Serial.println(F("  CALRESET                 wipe NVS calibration back to firmware defaults"));
+    Serial.println(F("  STOP                     park to safe stance, zero wheels"));
     Serial.println(F("  STATUS                   print joint angles, pose, loop timing"));
     Serial.println(F("  GAMEPADDUMP 0|1          raw pad axes (Bluepad32 builds only)"));
     Serial.println(F("  HELP                     print this message"));
@@ -123,10 +128,41 @@ void handleServosMid() {
         if (isWheelPwmChannel(ch)) {
             servoDriver::driveWheel(ch, 0.0f);
         } else {
+            // driveServo's per-joint safety clamp will keep hip near 135,
+            // femur >=150, tibia >=100 even though we ask for 135 here.
             servoDriver::driveServo(ch, SERVO_NEUTRAL_DEG);
         }
     }
     Serial.println(F("OK SERVOSMID"));
+}
+
+void handleLow() {
+    g_state.walkX = g_state.walkY = g_state.walkYaw = 0.0f;
+    for (int i = 0; i < 4; ++i) g_state.wheel[i] = 0.0f;
+    appEnterMode(MODE_SERVO);
+    gait::driveLow();
+    Serial.println(F("OK LOW"));
+}
+
+void handleHigh() {
+    g_state.walkX = g_state.walkY = g_state.walkYaw = 0.0f;
+    for (int i = 0; i < 4; ++i) g_state.wheel[i] = 0.0f;
+    appEnterMode(MODE_SERVO);
+    gait::driveHigh();
+    Serial.println(F("OK HIGH"));
+}
+
+void handleStand() {
+    g_state.walkX = g_state.walkY = g_state.walkYaw = 0.0f;
+    for (int i = 0; i < 4; ++i) g_state.wheel[i] = 0.0f;
+    appEnterMode(MODE_SERVO);
+    gait::driveStand();
+    Serial.println(F("OK STAND"));
+}
+
+void handleCalReset() {
+    servoDriver::resetCalibration(/*persist=*/true);
+    Serial.println(F("OK CALRESET (NVS wiped, defaults restored)"));
 }
 
 void handleServo(char* rest) {
@@ -230,6 +266,10 @@ void dispatch(char* line) {
     else if (!strcmp(cmd, "SERVO"))  handleServo(line);
     else if (!strcmp(cmd, "SERVOSMID")) handleServosMid();
     else if (!strcmp(cmd, "SERVOS90")) handleServosMid();
+    else if (!strcmp(cmd, "LOW"))    handleLow();
+    else if (!strcmp(cmd, "HIGH"))   handleHigh();
+    else if (!strcmp(cmd, "STAND"))  handleStand();
+    else if (!strcmp(cmd, "CALRESET")) handleCalReset();
     else if (!strcmp(cmd, "TRIM"))   handleTrim(line);
     else if (!strcmp(cmd, "STOP"))   handleStop();
     else if (!strcmp(cmd, "STATUS")) handleStatus();
