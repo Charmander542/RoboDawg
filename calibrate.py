@@ -12,7 +12,6 @@ Controls
   r                 CALRESET — wipe NVS calibration back to firmware defaults
   s                 STATUS — dump firmware state to log pane
   q                 quit (does NOT stop servos)
-
 Trim math
 ---------
 The firmware's neutral is 135° (mid of 0..270° range).  After you dial a
@@ -27,13 +26,25 @@ the real mechanical zero.
 
 import curses
 import re
+import subprocess
 import sys
+import os
 from time import sleep
+from math import floor
 
 import serial
 
+
+def get_devices() -> list[str]:
+    output = subprocess.check_output(["pio", "device", "list"]).decode()
+    return re.findall(r"^(\/.+)+", output, flags=re.MULTILINE)
+
+
+PORT = os.environ.get('PORT', next(
+    (dev for dev in get_devices() if 'Bluetooth' not in dev), None))
+assert PORT, "not connected to any devices"
+
 # ── connection ──────────────────────────────────────────────────────────────
-PORT = "/dev/cu.usbserial-0001"
 BAUD = 115_200
 
 # ── servo geometry ───────────────────────────────────────────────────────────
@@ -114,8 +125,8 @@ def main(stdscr):
     curses.init_pair(4, curses.COLOR_YELLOW, -1)                 # header
 
     # STATUS now returns trim in degrees; add directly to neutral.
-    angles  = {ch: NEUTRAL_DEG + trims.get(ch, 0.0) for _, ch in SERVOS}
-    trimmed = {ch: trims.get(ch, 0.0) != 0.0        for _, ch in SERVOS}
+    angles = {ch: NEUTRAL_DEG + trims.get(ch, 0.0) for _, ch in SERVOS}
+    trimmed = {ch: trims.get(ch, 0.0) != 0.0 for _, ch in SERVOS}
     log_lines: list[str] = []
     sel = 0
 
@@ -173,7 +184,7 @@ def main(stdscr):
 
     def nudge(delta: float):
         _, ch = SERVOS[sel]
-        angles[ch] = max(MIN_DEG, min(MAX_DEG, angles[ch] + delta))
+        angles[ch] = max(MIN_DEG, min(MAX_DEG, floor(angles[ch] + delta)))
         do_servo(sel)
 
     stdscr.nodelay(False)
@@ -233,7 +244,7 @@ def main(stdscr):
             try:
                 fresh = fetch_trims(ser)
                 for _, ch in SERVOS:
-                    angles[ch]  = NEUTRAL_DEG + fresh.get(ch, 0.0)
+                    angles[ch] = NEUTRAL_DEG + fresh.get(ch, 0.0)
                     trimmed[ch] = fresh.get(ch, 0.0) != 0.0
             except RuntimeError as e:
                 add_log(f"ERR {e}")
