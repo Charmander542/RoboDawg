@@ -1,0 +1,10 @@
+[project]
+name = "robodawg"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pygame-ce>=2.5.7",
+    "pyserial>=3.5",
+]
